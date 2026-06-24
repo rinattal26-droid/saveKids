@@ -320,6 +320,15 @@ body { background: var(--bg); direction: rtl; }
       <span style="font-size:24px;">🔴</span>
     </div>
 
+    <!-- הכנסות מהירות -->
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin-bottom:12px;">
+      <div>
+        <div style="font-size:12px;color:var(--text-sub);margin-bottom:2px;">💰 הכנסות החודש</div>
+        <div style="font-size:20px;font-weight:800;color:var(--green-dark);" id="home-income-total">₪0</div>
+      </div>
+      <button onclick="showAddIncomeModal()" style="background:var(--green);color:white;border:none;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;">+ הוסף</button>
+    </div>
+
     <div class="savings-section">
       <div class="savings-header">
         <h4>🎯 יעד חיסכון</h4>
@@ -743,6 +752,38 @@ body { background: var(--bg); direction: rtl; }
     </div>
 
     <!-- כפתור התנתקות -->
+    <!-- תזכורות -->
+    <div class="card" style="margin-bottom:12px;padding:16px;">
+      <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:12px;">🔔 תזכורות</div>
+      <div id="notif-status" style="font-size:13px;color:var(--text-sub);margin-bottom:12px;"></div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:14px;color:var(--text);">תזכורת יומית להוצאות</span>
+          <label style="position:relative;display:inline-block;width:44px;height:24px;">
+            <input type="checkbox" id="toggle-daily" onchange="saveNotifSettings()" style="opacity:0;width:0;height:0;">
+            <span onclick="document.getElementById('toggle-daily').click()" style="position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:24px;transition:.3s;" id="span-daily"></span>
+          </label>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:14px;color:var(--text);">סיכום שבועי</span>
+          <label style="position:relative;display:inline-block;width:44px;height:24px;">
+            <input type="checkbox" id="toggle-weekly" onchange="saveNotifSettings()" style="opacity:0;width:0;height:0;">
+            <span onclick="document.getElementById('toggle-weekly').click()" style="position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:24px;transition:.3s;" id="span-weekly"></span>
+          </label>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:14px;color:var(--text);">סיכום חודשי</span>
+          <label style="position:relative;display:inline-block;width:44px;height:24px;">
+            <input type="checkbox" id="toggle-monthly" onchange="saveNotifSettings()" style="opacity:0;width:0;height:0;">
+            <span onclick="document.getElementById('toggle-monthly').click()" style="position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:24px;transition:.3s;" id="span-monthly"></span>
+          </label>
+        </div>
+      </div>
+      <button onclick="requestNotifPermission()" id="notif-btn" style="margin-top:14px;width:100%;background:linear-gradient(135deg,var(--purple),#A78BF7);color:white;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">
+        🔔 הפעל התראות
+      </button>
+    </div>
+
     <button onclick="doLogout()" style="width:100%;background:white;border:1.5px solid #f5c4b3;color:#d4522a;border-radius:12px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:8px;">
       🚪 התנתק
     </button>
@@ -761,14 +802,7 @@ body { background: var(--bg); direction: rtl; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
       <span>הוסף</span>
     </div>
-    <div class="nav-item" onclick="showScreen('reports', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      <span>דוחות</span>
-    </div>
-    <div class="nav-item" onclick="showScreen('income', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      <span>הכנסות</span>
-    </div>
+
     <div class="nav-item" onclick="showScreen('kids', this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M8 21v-1a4 4 0 0 1 8 0v1"/><path d="M16 11c1.5.5 3 1.5 3 3v1"/><path d="M8 11c-1.5.5-3 1.5-3 3v1"/></svg>
       <span>ילדים</span>
@@ -924,8 +958,110 @@ function updateHomeScreen() {
   document.getElementById('budget-pct').textContent = pct + '%';
   document.getElementById('budget-bar').style.width = pct + '%';
   document.getElementById('alert-over').style.display = userExpenses > userBudget && userBudget > 0 ? 'flex' : 'none';
+  const homeIncome = document.getElementById('home-income-total');
+  if (homeIncome) {
+    const total = (incomeList || []).reduce((s, i) => s + i.amount, 0);
+    homeIncome.textContent = '₪' + total.toLocaleString('he-IL');
+  }
   document.getElementById('goal-display').textContent = 'יעד: ₪' + userSavingsGoal.toLocaleString('he-IL');
   document.getElementById('goal-remain').textContent = '₪' + userSavingsGoal.toLocaleString('he-IL') + ' נותרו';
+}
+
+// ===== NOTIFICATIONS =====
+function requestNotifPermission() {
+  if (!('Notification' in window)) {
+    alert('הדפדפן שלך לא תומך בהתראות');
+    return;
+  }
+  Notification.requestPermission().then(perm => {
+    updateNotifUI();
+    if (perm === 'granted') {
+      scheduleNotifications();
+      alert('✅ התראות הופעלו! תקבלו תזכורות לפי הגדרות שלכם.');
+    } else {
+      alert('❌ לא אישרת התראות. ניתן לשנות בהגדרות הדפדפן.');
+    }
+  });
+}
+
+function updateNotifUI() {
+  const status = document.getElementById('notif-status');
+  const btn = document.getElementById('notif-btn');
+  if (!status || !btn) return;
+  if (!('Notification' in window)) {
+    status.textContent = 'הדפדפן לא תומך בהתראות';
+    btn.style.display = 'none';
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    status.textContent = '✅ התראות פעילות';
+    status.style.color = 'var(--green-dark)';
+    btn.style.display = 'none';
+  } else if (Notification.permission === 'denied') {
+    status.textContent = '❌ התראות חסומות — שנה בהגדרות הדפדפן';
+    status.style.color = '#d4522a';
+    btn.style.display = 'none';
+  } else {
+    status.textContent = 'התראות לא הופעלו עדיין';
+    btn.style.display = 'block';
+  }
+  // Load saved settings
+  const settings = JSON.parse(localStorage.getItem('savekids_notif') || '{}');
+  const daily = document.getElementById('toggle-daily');
+  const weekly = document.getElementById('toggle-weekly');
+  const monthly = document.getElementById('toggle-monthly');
+  if (daily) daily.checked = settings.daily || false;
+  if (weekly) weekly.checked = settings.weekly || false;
+  if (monthly) monthly.checked = settings.monthly || false;
+  updateToggleColors();
+}
+
+function updateToggleColors() {
+  ['daily','weekly','monthly'].forEach(id => {
+    const cb = document.getElementById('toggle-' + id);
+    const sp = document.getElementById('span-' + id);
+    if (cb && sp) sp.style.background = cb.checked ? 'var(--purple)' : '#ccc';
+  });
+}
+
+function saveNotifSettings() {
+  updateToggleColors();
+  const settings = {
+    daily: document.getElementById('toggle-daily')?.checked || false,
+    weekly: document.getElementById('toggle-weekly')?.checked || false,
+    monthly: document.getElementById('toggle-monthly')?.checked || false
+  };
+  localStorage.setItem('savekids_notif', JSON.stringify(settings));
+  if (Notification.permission === 'granted') scheduleNotifications();
+}
+
+function scheduleNotifications() {
+  const settings = JSON.parse(localStorage.getItem('savekids_notif') || '{}');
+  // Clear existing
+  const ids = JSON.parse(localStorage.getItem('savekids_notif_ids') || '[]');
+  ids.forEach(id => clearTimeout(id));
+  const newIds = [];
+
+  if (settings.daily) {
+    // Show daily reminder after 20 hours
+    const id = setTimeout(() => {
+      new Notification('SaveKids 💰', { body: 'זכרתם לעדכן את ההוצאות היומיות?', icon: '/favicon.ico' });
+    }, 20 * 60 * 60 * 1000);
+    newIds.push(id);
+  }
+  if (settings.weekly) {
+    const id = setTimeout(() => {
+      new Notification('SaveKids 📊', { body: 'הגיע הזמן לסיכום שבועי! איך נראה התקציב השבוע?', icon: '/favicon.ico' });
+    }, 7 * 24 * 60 * 60 * 1000);
+    newIds.push(id);
+  }
+  if (settings.monthly) {
+    const id = setTimeout(() => {
+      new Notification('SaveKids 🎯', { body: 'סיכום חודשי — בואו לראות כמה חסכתם החודש!', icon: '/favicon.ico' });
+    }, 30 * 24 * 60 * 60 * 1000);
+    newIds.push(id);
+  }
+  localStorage.setItem('savekids_notif_ids', JSON.stringify(newIds));
 }
 
 function resetAllData() {
@@ -987,6 +1123,7 @@ function showScreen(name, navEl) {
   if (name === 'reports') { updateReportsScreen(); setTimeout(drawBarChart, 50); }
   if (name === 'income') { renderIncomeScreen(); }
   if (name === 'premium') { updatePremiumUI(); }
+  if (name === 'profile') { updateNotifUI(); }
 }
 
 function updateReportsScreen() {
@@ -1356,8 +1493,7 @@ function forgotPassword() {
   }
   const saved = loadFromStorage(email);
   if (!saved) {
-    alert('לא נמצא חשבון עם האימייל הזה.
-נסי להירשם כמשתמש חדש.');
+    alert('לא נמצא חשבון עם האימייל הזה.\nנסי להירשם כמשתמש חדש.');
     switchToRegister();
     return;
   }
